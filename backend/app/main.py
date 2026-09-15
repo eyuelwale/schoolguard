@@ -6,7 +6,7 @@ from .routers import auth, users, classes, students, parents, attendance, notifi
 app = FastAPI(
     title="SchoolGuard API",
     version="1.0.0",
-    description="School attendance, parent notification and Telegram integration API."
+    description="School attendance, parent notification and Telegram integration API.",
 )
 
 app.add_middleware(
