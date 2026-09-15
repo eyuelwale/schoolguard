@@ -1,7 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routers import auth, users, classes, students, parents, attendance, notifications, dashboard, telegram, schools
+from .routers import (
+    auth,
+    users,
+    classes,
+    students,
+    parents,
+    attendance,
+    notifications,
+    dashboard,
+    telegram,
+    schools
+)
 
 app = FastAPI(
     title="SchoolGuard API",
@@ -19,19 +30,33 @@ app.add_middleware(
 )
 
 for router in [
-    auth.router, users.router, classes.router, students.router,
-    parents.router, attendance.router, notifications.router,
-    dashboard.router, telegram.router, schools.router
+    auth.router,
+    users.router,
+    classes.router,
+    students.router,
+    parents.router,
+    attendance.router,
+    notifications.router,
+    dashboard.router,
+    telegram.router,
+    schools.router
 ]:
     app.include_router(router)
 
+
 @app.get("/")
 def root():
-    return {"name": settings.APP_NAME, "status": "running"}
+    return {
+        "name": settings.APP_NAME,
+        "status": "running"
+    }
+
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy"
+    }
 
 
 if __name__ == "__main__":
@@ -46,4 +71,3 @@ if __name__ == "__main__":
         port=port,
         reload=False
     )
-
