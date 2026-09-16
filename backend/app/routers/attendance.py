@@ -54,7 +54,7 @@ def status(data: AttendanceStatus, db: Session = Depends(get_db), user=Depends(r
             date_val=date_type.today(),
             arrival_time=a.arrival_time,
             departure_time=a.departure_time,
-            method="Manual Status",
+            recorder_name=user.full_name,
         )
         enqueue_notifications(
             db,
@@ -99,7 +99,7 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
             if a.departure_time and a.departure_time <= when:
                 a.departure_time = None
 
-            msg_dict = build_arrival_message(student, when, f"{data.method} (Bulk)", is_update=False)
+            msg_dict = build_arrival_message(student, when, is_update=False, recorder_name=user.full_name)
             enqueue_notifications(db, student, "ARRIVAL", msg_dict)
 
         elif event == "DEPARTURE":
@@ -113,7 +113,7 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
             a.departure_time = when
             a.departure_method = data.method
 
-            msg_dict = build_departure_message(student, when, f"{data.method} (Bulk)", a.arrival_time, is_update=False)
+            msg_dict = build_departure_message(student, when, arrival_time=a.arrival_time, is_update=False, recorder_name=user.full_name)
             enqueue_notifications(db, student, "DEPARTURE", msg_dict)
 
         else:  # STATUS  roll-call: set status directly
@@ -127,7 +127,7 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
                 date_val=data.attendance_date,
                 arrival_time=a.arrival_time,
                 departure_time=a.departure_time,
-                method=f"{data.method} (Roll Call)",
+                recorder_name=user.full_name,
             )
             enqueue_notifications(db, student, kind, msg_dict)
 

@@ -204,11 +204,10 @@ def translate_method(method: str | None) -> str:
     return m
 
 
-def build_arrival_message(student: Student, when: datetime, method: str | None, is_update: bool = False) -> dict[str, str]:
+def build_arrival_message(student: Student, when: datetime, method: str | None = None, is_update: bool = False, recorder_name: str | None = None) -> dict[str, str]:
     date_str = when.strftime('%Y-%m-%d')
     time_str = when.strftime('%I:%M %p')
-    method_val = method or "Gate Check"
-    method_am = translate_method(method_val)
+    admin_name = recorder_name or "System Admin"
 
     en_label = "Arrival Updated / Re-entry" if is_update else "Arrival Recorded"
     am_label = "የተገኘበት/የተገኘችበት ሰዓት ተዘምኗል" if is_update else "ተማሪ ትምህርት ቤት ደርሷል / ገብቷል"
@@ -218,25 +217,24 @@ def build_arrival_message(student: Student, when: datetime, method: str | None, 
         f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
         f"📅 Date: {date_str}\n"
         f"⏰ <b>Arrival Time:</b> {time_str}\n"
-        f"📋 Method: {method_val}"
+        f"👤 Registered by: {admin_name}"
     )
     am = (
         f"✅ <b>{am_label}</b>\n"
         f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
         f"📅 ቀን: {date_str}\n"
         f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {time_str}\n"
-        f"📋 ዘዴ: {method_am}"
+        f"👤 መዝጋቢ: {admin_name}"
     )
     return {"en": en, "am": am}
 
 
-def build_departure_message(student: Student, when: datetime, method: str | None, arrival_time: datetime | None, is_update: bool = False) -> dict[str, str]:
+def build_departure_message(student: Student, when: datetime, method: str | None = None, arrival_time: datetime | None = None, is_update: bool = False, recorder_name: str | None = None) -> dict[str, str]:
     date_str = when.strftime('%Y-%m-%d')
     dep_str = when.strftime('%I:%M %p')
     arr_str_en = arrival_time.strftime('%I:%M %p') if arrival_time else "Not recorded"
     arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
-    method_val = method or "Gate Check"
-    method_am = translate_method(method_val)
+    admin_name = recorder_name or "System Admin"
 
     en_label = "Departure Updated" if is_update else "Departure Recorded"
     am_label = "የወጣበት/የወጣችበት ሰዓት ተዘምኗል" if is_update else "ተማሪ ከትምህርት ቤት ወጥቷል"
@@ -247,7 +245,7 @@ def build_departure_message(student: Student, when: datetime, method: str | None
         f"📅 Date: {date_str}\n"
         f"⏰ <b>Arrival Time:</b> {arr_str_en}\n"
         f"⏰ <b>Departure Time:</b> {dep_str}\n"
-        f"📋 Method: {method_val}"
+        f"👤 Registered by: {admin_name}"
     )
     am = (
         f"✅ <b>{am_label}</b>\n"
@@ -255,12 +253,12 @@ def build_departure_message(student: Student, when: datetime, method: str | None
         f"📅 ቀን: {date_str}\n"
         f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {arr_str_am}\n"
         f"⏰ <b>የወጣበት/የወጣችበት ሰዓት:</b> {dep_str}\n"
-        f"📋 ዘዴ: {method_am}"
+        f"👤 መዝጋቢ: {admin_name}"
     )
     return {"en": en, "am": am}
 
 
-def build_status_message(student: Student, status_val: str, date_val: date, arrival_time: datetime | None, departure_time: datetime | None, method: str | None = None) -> dict[str, str]:
+def build_status_message(student: Student, status_val: str, date_val: date, arrival_time: datetime | None, departure_time: datetime | None, method: str | None = None, recorder_name: str | None = None) -> dict[str, str]:
     status_val = status_val.upper()
     status_map_am = {
         "PRESENT": "ተገኝቷል",
@@ -276,9 +274,7 @@ def build_status_message(student: Student, status_val: str, date_val: date, arri
     arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
     dep_str_en = departure_time.strftime('%I:%M %p') if departure_time else "Not recorded"
     dep_str_am = departure_time.strftime('%I:%M %p') if departure_time else "አልተመዘገበም"
-
-    method_val = method or "Roll Call"
-    method_am = translate_method(method_val)
+    admin_name = recorder_name or "System Admin"
 
     en = (
         f"{icon} <b>Attendance Status: {status_val}</b>\n"
@@ -286,7 +282,7 @@ def build_status_message(student: Student, status_val: str, date_val: date, arri
         f"📅 Date: {date_str}\n"
         f"⏰ <b>Arrival Time:</b> {arr_str_en}\n"
         f"⏰ <b>Departure Time:</b> {dep_str_en}\n"
-        f"📋 Recorded via: {method_val}"
+        f"👤 Registered by: {admin_name}"
     )
     am = (
         f"{icon} <b>የመገኘት ሁኔታ: {status_am}</b>\n"
@@ -294,7 +290,7 @@ def build_status_message(student: Student, status_val: str, date_val: date, arri
         f"📅 ቀን: {date_str}\n"
         f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {arr_str_am}\n"
         f"⏰ <b>የወጣበት/የወጣችበት ሰዓት:</b> {dep_str_am}\n"
-        f"📋 ዘዴ: {method_am}"
+        f"👤 መዝጋቢ: {admin_name}"
     )
     return {"en": en, "am": am}
 
@@ -385,7 +381,10 @@ def mark_arrival(db: Session, student_id: int, actor_id: int, method: str, when:
         recorded_by=actor_id,
     ))
 
-    msg_dict = build_arrival_message(student, when, method, is_update=is_update)
+    actor = db.get(User, actor_id) if actor_id else None
+    recorder_name = actor.full_name if actor else "System Admin"
+
+    msg_dict = build_arrival_message(student, when, method=method, is_update=is_update, recorder_name=recorder_name)
     enqueue_notifications(
         db,
         student,
@@ -421,7 +420,10 @@ def mark_departure(db: Session, student_id: int, actor_id: int, method: str, whe
         recorded_by=actor_id,
     ))
 
-    msg_dict = build_departure_message(student, when, method, a.arrival_time, is_update=is_update)
+    actor = db.get(User, actor_id) if actor_id else None
+    recorder_name = actor.full_name if actor else "System Admin"
+
+    msg_dict = build_departure_message(student, when, method=method, arrival_time=a.arrival_time, is_update=is_update, recorder_name=recorder_name)
     enqueue_notifications(
         db,
         student,
