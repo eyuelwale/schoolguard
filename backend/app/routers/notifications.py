@@ -47,14 +47,21 @@ def send_test_notification(parent_id: int, db: Session = Depends(get_db), user=D
     if not parent.telegram_id:
         raise HTTPException(400, "Parent does not have a linked Telegram ID yet")
 
-    msg = f"🔔 <b>SchoolGuard Test Alert</b>\n\nHello {parent.full_name}, this is a test notification from the SchoolGuard system."
+    lang = (getattr(parent, "language", None) or "en").lower()
+    if lang == "am":
+        msg = f"🔔 <b>የስኩልጋርድ የሙከራ ማሳወቂያ</b>\n\nሰላም {parent.full_name}፣ ይህ ከ SchoolGuard ሥርዓት የተላከ የሙከራ ማሳወቂያ ነው።"
+        title = "ስኩልጋርድ: የሙከራ ማሳወቂያ"
+    else:
+        msg = f"🔔 <b>SchoolGuard Test Alert</b>\n\nHello {parent.full_name}, this is a test notification from the SchoolGuard system."
+        title = "SchoolGuard: Test Alert"
+
     success, err = send_telegram_message(parent.telegram_id, msg)
 
     notif = Notification(
         parent_id=parent.id,
         student_id=None,
         type="TEST",
-        title="SchoolGuard: Test Alert",
+        title=title,
         message=msg,
         status="SENT" if success else "FAILED",
         sent_at=datetime.utcnow() if success else None,

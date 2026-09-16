@@ -338,6 +338,35 @@ def get_linked_parent(tg_id: int):
         return None
 
 
+def update_user_language(tg_id: int, lang: str):
+    """Save user language preference to the database."""
+    try:
+        try:
+            from backend.app.database import SessionLocal
+            from backend.app.models import User
+        except ModuleNotFoundError:
+            from app.database import SessionLocal
+            from app.models import User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.telegram_id == tg_id).first()
+            if user:
+                user.language = lang
+                db.commit()
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Error updating user language in DB: {e}")
+
+
+def sync_parent_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ensure context.user_data['lang'] matches the parent's persisted DB language if not set."""
+    if "lang" not in context.user_data and update and update.effective_user:
+        parent = get_linked_parent(update.effective_user.id)
+        if parent and getattr(parent, "language", None):
+            context.user_data["lang"] = parent.language
+
+
 def get_parent_children(parent_id: int):
     """Retrieve all linked students for this parent."""
     try:
@@ -434,6 +463,11 @@ async def got_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["lang"] = "am"
     else:
         context.user_data["lang"] = "en"
+
+    tg_user = update.effective_user
+    if tg_user:
+        update_user_language(tg_user.id, context.user_data["lang"])
+
     await update.message.reply_text(
         tr(context, "language_set"),
         parse_mode="Markdown",
@@ -450,6 +484,10 @@ async def got_language_callback(update: Update, context: ContextTypes.DEFAULT_TY
     lang = "am" if query.data == "lang_am" else "en"
     context.user_data["lang"] = lang
 
+    tg_user = update.effective_user
+    if tg_user:
+        update_user_language(tg_user.id, lang)
+
     # Update the Menu button commands for this specific chat
     try:
         await context.bot.set_my_commands(
@@ -465,7 +503,6 @@ async def got_language_callback(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="Markdown"
     )
     # Show main menu
-    tg_user = update.effective_user
     parent = get_linked_parent(tg_user.id) if tg_user else None
     msg = tr(context, "welcome_linked", name=parent.full_name) if parent else tr(context, "welcome_new")
     await context.bot.send_message(
@@ -633,14 +670,20 @@ async def got_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return ConversationHandler.END
 
             token = login_resp.json()["access_token"]
+            chosen_lang = context.user_data.get("lang", "en")
 
             # Step 2: Link their Telegram ID
             link_resp = await client.post(
                 f"{API_BASE}/api/telegram/link-self",
-                json={"telegram_id": tg_user.id, "telegram_username": tg_user.username},
+                json={
+                    "telegram_id": tg_user.id,
+                    "telegram_username": tg_user.username,
+                    "language": chosen_lang
+                },
                 headers={"Authorization": f"Bearer {token}"}
             )
             if link_resp.status_code == 200:
+                update_user_language(tg_user.id, chosen_lang)
                 await update.message.reply_text(
                     tr(context, "link_success", name=tg_user.first_name),
                     parse_mode="Markdown",
@@ -661,7 +704,9 @@ async def got_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Error: {e}", reply_markup=get_main_menu(context))
 
+    saved_lang = context.user_data.get("lang", "en")
     context.user_data.clear()
+    context.user_data["lang"] = saved_lang
     return ConversationHandler.END
 
 
@@ -677,6 +722,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def children_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """View linked students."""
     touch_activity(context)
+    sync_parent_language(update, context)
     if await handle_session_expiry(update, context):
         return
 
@@ -698,10 +744,12 @@ async def children_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    lang = get_lang(context)
     lines = [tr(context, "children_header", name=parent.full_name)]
     for item in children:
         st = item["student"]
-        cls_str = f" | Class: *{item['class_name']}*" if item["class_name"] else ""
+        cls_label = "ክፍል" if lang == "am" else "Class"
+        cls_str = f" | {cls_label}: *{item['class_name']}*" if item["class_name"] else ""
         lines.append(f"• 👤 *{st.notification_name}* (Code: `{st.student_code}`){cls_str}")
 
     await update.message.reply_text(
@@ -712,6 +760,7 @@ async def children_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """View today's attendance status."""
     touch_activity(context)
+    sync_parent_language(update, context)
     if await handle_session_expiry(update, context):
         return
 
@@ -733,6 +782,17 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    lang = get_lang(context)
+    status_map = {
+        "PRESENT": "ተገኝቷል" if lang == "am" else "PRESENT",
+        "LATE": "አርፍዷል" if lang == "am" else "LATE",
+        "ABSENT": "አልተገኘም" if lang == "am" else "ABSENT",
+        "EXCUSED": "ፈቃድ የተሰጠው" if lang == "am" else "EXCUSED",
+    }
+    lbl_status = "ሁኔታ" if lang == "am" else "Status"
+    lbl_arr = "የመግቢያ ሰዓት" if lang == "am" else "Arrival"
+    lbl_dep = "የመውጫ ሰዓት" if lang == "am" else "Departure"
+
     today_str = date_type.today().strftime("%Y-%m-%d")
     lines = [tr(context, "attendance_header", date=today_str)]
     for item in records:
@@ -753,11 +813,12 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             arr = att.arrival_time.strftime("%I:%M %p") if att.arrival_time else tr(context, "not_arrived")
             dep = att.departure_time.strftime("%I:%M %p") if att.departure_time else tr(context, "not_departed")
+            st_text = status_map.get(att.status, att.status)
             lines.append(
                 f"👶 *{name}* (Code: `{st.student_code}`)\n"
-                f"   Status: {status_emoji} *{att.status}*\n"
-                f"   🕒 Arrival: {arr}\n"
-                f"   🕒 Departure: {dep}\n"
+                f"   {lbl_status}: {status_emoji} *{st_text}*\n"
+                f"   🕒 {lbl_arr}: {arr}\n"
+                f"   🕒 {lbl_dep}: {dep}\n"
             )
 
     await update.message.reply_text(

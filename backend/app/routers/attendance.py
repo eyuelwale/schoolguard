@@ -8,7 +8,10 @@ from ..schemas import (
     AttendanceArrival, AttendanceDeparture, AttendanceStatus, AttendanceOut,
     BulkAttendanceIn, AttendanceUpdate
 )
-from ..services import mark_arrival, mark_departure, enqueue_notifications, attendance_for_day
+from ..services import (
+    mark_arrival, mark_departure, enqueue_notifications, attendance_for_day,
+    build_arrival_message, build_departure_message, build_status_message
+)
 
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
 
@@ -45,19 +48,19 @@ def status(data: AttendanceStatus, db: Session = Depends(get_db), user=Depends(r
     student = db.get(Student, data.student_id)
     if student:
         kind = "LATE" if value == "LATE" else "ABSENCE" if value == "ABSENT" else "ARRIVAL"
-        status_icon = "⚠️" if value == "LATE" else "❌" if value == "ABSENT" else "✅"
-        arrival_str = a.arrival_time.strftime('%I:%M:%S %p') if a.arrival_time else "Not recorded"
-        departure_str = a.departure_time.strftime('%I:%M:%S %p') if a.departure_time else "Not recorded"
-
+        msg_dict = build_status_message(
+            student=student,
+            status_val=value,
+            date_val=date_type.today(),
+            arrival_time=a.arrival_time,
+            departure_time=a.departure_time,
+            method="Manual Status",
+        )
         enqueue_notifications(
             db,
             student,
             kind,
-            f"{status_icon} <b>Attendance Status: {value}</b>\n"
-            f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-            f"📅 Date: {date_type.today().strftime('%Y-%m-%d')}\n"
-            f"⏰ <b>Arrival Time:</b> {arrival_str}\n"
-            f"⏰ <b>Departure Time:</b> {departure_str}"
+            msg_dict,
         )
 
     db.commit(); db.refresh(a)
@@ -96,15 +99,8 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
             if a.departure_time and a.departure_time <= when:
                 a.departure_time = None
 
-            arrival_str = when.strftime('%I:%M %p')
-            enqueue_notifications(
-                db, student, "ARRIVAL",
-                f"✅ <b>Arrival Recorded</b>\n"
-                f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-                f"📅 Date: {data.attendance_date.strftime('%Y-%m-%d')}\n"
-                f"⏰ <b>Arrival Time:</b> {arrival_str}\n"
-                f"📋 Recorded via: {data.method} (Bulk)"
-            )
+            msg_dict = build_arrival_message(student, when, f"{data.method} (Bulk)", is_update=False)
+            enqueue_notifications(db, student, "ARRIVAL", msg_dict)
 
         elif event == "DEPARTURE":
             if not a.arrival_time:
@@ -117,35 +113,23 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
             a.departure_time = when
             a.departure_method = data.method
 
-            arrival_str = a.arrival_time.strftime('%I:%M %p') if a.arrival_time else "Not recorded"
-            departure_str = when.strftime('%I:%M %p')
-            enqueue_notifications(
-                db, student, "DEPARTURE",
-                f"✅ <b>Departure Recorded</b>\n"
-                f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-                f"📅 Date: {data.attendance_date.strftime('%Y-%m-%d')}\n"
-                f"⏰ <b>Arrival Time:</b> {arrival_str}\n"
-                f"⏰ <b>Departure Time:</b> {departure_str}\n"
-                f"📋 Recorded via: {data.method} (Bulk)"
-            )
+            msg_dict = build_departure_message(student, when, f"{data.method} (Bulk)", a.arrival_time, is_update=False)
+            enqueue_notifications(db, student, "DEPARTURE", msg_dict)
 
         else:  # STATUS  roll-call: set status directly
             val = data.status.upper()
             a.status = val
 
             kind = "LATE" if val == "LATE" else "ABSENCE" if val == "ABSENT" else "ARRIVAL"
-            icon = "⚠️" if val == "LATE" else "❌" if val == "ABSENT" else "✅" if val == "PRESENT" else "ℹ️"
-            arrival_str = a.arrival_time.strftime('%I:%M %p') if a.arrival_time else "Not recorded"
-            departure_str = a.departure_time.strftime('%I:%M %p') if a.departure_time else "Not recorded"
-            enqueue_notifications(
-                db, student, kind,
-                f"{icon} <b>Attendance Status: {val}</b>\n"
-                f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-                f"📅 Date: {data.attendance_date.strftime('%Y-%m-%d')}\n"
-                f"⏰ <b>Arrival Time:</b> {arrival_str}\n"
-                f"⏰ <b>Departure Time:</b> {departure_str}\n"
-                f"📋 Recorded via: {data.method} (Roll Call)"
+            msg_dict = build_status_message(
+                student=student,
+                status_val=val,
+                date_val=data.attendance_date,
+                arrival_time=a.arrival_time,
+                departure_time=a.departure_time,
+                method=f"{data.method} (Roll Call)",
             )
+            enqueue_notifications(db, student, kind, msg_dict)
 
         results.append(a)
 

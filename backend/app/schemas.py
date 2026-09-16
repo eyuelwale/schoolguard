@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     telegram_id: int | None
     telegram_username: str | None
     status: str
+    language: str | None = "en"
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -264,6 +265,7 @@ class NotificationSettingsIn(BaseModel):
 class TelegramLinkIn(BaseModel):
     telegram_id: int
     telegram_username: str | None = None
+    language: str | None = None
 
 
 class BulkDeleteIn(BaseModel):

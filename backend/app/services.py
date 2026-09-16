@@ -133,8 +133,10 @@ def resend_notification_record(db: Session, notif: Notification, async_dispatch:
 
     # Format message
     msg_text = notif.message
+    lang = (getattr(parent, "language", None) or "en").lower() if parent else "en"
     if not msg_text.startswith("🔔"):
-        msg_text = f"🔔 <b>SchoolGuard Alert (Resent)</b>\n\n{msg_text}"
+        header = "🔔 <b>የስኩልጋርድ ማሳወቂያ (እንደገና የተላከ)</b>" if lang == "am" else "🔔 <b>SchoolGuard Alert (Resent)</b>"
+        msg_text = f"{header}\n\n{msg_text}"
 
     if async_dispatch:
         notif.status = "PENDING"
@@ -178,7 +180,126 @@ def parent_ids_for_student(db: Session, student_id: int):
     ]
 
 
-def enqueue_notifications(db: Session, student: Student, kind: str, message: str):
+def translate_method(method: str | None) -> str:
+    if not method:
+        return "በር ላይ ፍተሻ"
+    m = method.strip()
+    m_lower = m.lower()
+    if "qr" in m_lower:
+        return "በ QR ኮድ"
+    if "gate" in m_lower:
+        return "በር ላይ ፍተሻ"
+    if "manual" in m_lower:
+        return "በእጅ ምዝገባ"
+    if "roll" in m_lower:
+        return "የክፍል ውስጥ ምዝገባ"
+    if "bulk" in m_lower:
+        return "በጅምላ"
+    if "teacher" in m_lower:
+        return "በአስተማሪ"
+    if "security" in m_lower:
+        return "በጥበቃ ሰራተኛ"
+    if "admin" in m_lower:
+        return "በአስተዳዳሪ"
+    return m
+
+
+def build_arrival_message(student: Student, when: datetime, method: str | None, is_update: bool = False) -> dict[str, str]:
+    date_str = when.strftime('%Y-%m-%d')
+    time_str = when.strftime('%I:%M %p')
+    method_val = method or "Gate Check"
+    method_am = translate_method(method_val)
+
+    en_label = "Arrival Updated / Re-entry" if is_update else "Arrival Recorded"
+    am_label = "የመግቢያ ሰዓት ተዘምኗል" if is_update else "ተማሪ ትምህርት ቤት ደርሷል / ገብቷል"
+
+    en = (
+        f"✅ <b>{en_label}</b>\n"
+        f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
+        f"📅 Date: {date_str}\n"
+        f"⏰ <b>Arrival Time:</b> {time_str}\n"
+        f"📋 Method: {method_val}"
+    )
+    am = (
+        f"✅ <b>{am_label}</b>\n"
+        f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
+        f"📅 ቀን: {date_str}\n"
+        f"⏰ <b>የመግቢያ ሰዓት:</b> {time_str}\n"
+        f"📋 ዘዴ: {method_am}"
+    )
+    return {"en": en, "am": am}
+
+
+def build_departure_message(student: Student, when: datetime, method: str | None, arrival_time: datetime | None, is_update: bool = False) -> dict[str, str]:
+    date_str = when.strftime('%Y-%m-%d')
+    dep_str = when.strftime('%I:%M %p')
+    arr_str_en = arrival_time.strftime('%I:%M %p') if arrival_time else "Not recorded"
+    arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
+    method_val = method or "Gate Check"
+    method_am = translate_method(method_val)
+
+    en_label = "Departure Updated" if is_update else "Departure Recorded"
+    am_label = "የመውጫ ሰዓት ተዘምኗል" if is_update else "ተማሪ ከትምህርት ቤት ወጥቷል"
+
+    en = (
+        f"✅ <b>{en_label}</b>\n"
+        f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
+        f"📅 Date: {date_str}\n"
+        f"⏰ <b>Arrival Time:</b> {arr_str_en}\n"
+        f"⏰ <b>Departure Time:</b> {dep_str}\n"
+        f"📋 Method: {method_val}"
+    )
+    am = (
+        f"✅ <b>{am_label}</b>\n"
+        f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
+        f"📅 ቀን: {date_str}\n"
+        f"⏰ <b>የመግቢያ ሰዓት:</b> {arr_str_am}\n"
+        f"⏰ <b>የመውጫ ሰዓት:</b> {dep_str}\n"
+        f"📋 ዘዴ: {method_am}"
+    )
+    return {"en": en, "am": am}
+
+
+def build_status_message(student: Student, status_val: str, date_val: date, arrival_time: datetime | None, departure_time: datetime | None, method: str | None = None) -> dict[str, str]:
+    status_val = status_val.upper()
+    status_map_am = {
+        "PRESENT": "ተገኝቷል",
+        "LATE": "አርፍዷል",
+        "ABSENT": "አልተገኘም",
+        "EXCUSED": "ፈቃድ የተሰጠው",
+    }
+    status_am = status_map_am.get(status_val, status_val)
+    icon = "⚠️" if status_val == "LATE" else "❌" if status_val == "ABSENT" else "✅" if status_val == "PRESENT" else "ℹ️"
+
+    date_str = date_val.strftime('%Y-%m-%d')
+    arr_str_en = arrival_time.strftime('%I:%M %p') if arrival_time else "Not recorded"
+    arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
+    dep_str_en = departure_time.strftime('%I:%M %p') if departure_time else "Not recorded"
+    dep_str_am = departure_time.strftime('%I:%M %p') if departure_time else "አልተመዘገበም"
+
+    method_val = method or "Roll Call"
+    method_am = translate_method(method_val)
+
+    en = (
+        f"{icon} <b>Attendance Status: {status_val}</b>\n"
+        f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
+        f"📅 Date: {date_str}\n"
+        f"⏰ <b>Arrival Time:</b> {arr_str_en}\n"
+        f"⏰ <b>Departure Time:</b> {dep_str_en}\n"
+        f"📋 Recorded via: {method_val}"
+    )
+    am = (
+        f"{icon} <b>የመገኘት ሁኔታ: {status_am}</b>\n"
+        f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
+        f"📅 ቀን: {date_str}\n"
+        f"⏰ <b>የመግቢያ ሰዓት:</b> {arr_str_am}\n"
+        f"⏰ <b>የመውጫ ሰዓት:</b> {dep_str_am}\n"
+        f"📋 ዘዴ: {method_am}"
+    )
+    return {"en": en, "am": am}
+
+
+def enqueue_notifications(db: Session, student: Student, kind: str, message: str | dict[str, str], title: str | dict[str, str] | None = None):
     flag = {
         "ARRIVAL": "arrival_enabled",
         "DEPARTURE": "departure_enabled",
@@ -186,6 +307,15 @@ def enqueue_notifications(db: Session, student: Student, kind: str, message: str
         "ABSENCE": "absence_enabled",
         "CLASS_END": "class_end_enabled",
     }.get(kind)
+
+    title_map_am = {
+        "ARRIVAL": "የመግቢያ ማሳወቂያ",
+        "DEPARTURE": "የመውጫ ማሳወቂያ",
+        "LATE": "የማርፈድ ማሳወቂያ",
+        "ABSENCE": "የቀሪነት ማሳወቂያ",
+        "CLASS_END": "የትምህርት ሰዓት ማጠቃለያ",
+        "TEST": "የሙከራ ማሳወቂያ",
+    }
 
     for parent_id in parent_ids_for_student(db, student.id):
         setting = db.query(NotificationSetting).filter(
@@ -196,19 +326,37 @@ def enqueue_notifications(db: Session, student: Student, kind: str, message: str
         enabled = True if not setting or not flag else getattr(setting, flag)
         if enabled:
             parent = db.get(User, parent_id)
+            lang = (getattr(parent, "language", None) or "en").lower()
+
+            if isinstance(message, dict):
+                body = message.get(lang, message.get("en", list(message.values())[0]))
+            else:
+                body = message
+
+            if isinstance(title, dict):
+                notif_title = title.get(lang, title.get("en", f"SchoolGuard: {kind.title()}"))
+            elif title:
+                notif_title = title
+            else:
+                if lang == "am":
+                    notif_title = f"ስኩልጋርድ: {title_map_am.get(kind, kind)}"
+                else:
+                    notif_title = f"SchoolGuard: {kind.title()}"
+
             notif = Notification(
                 parent_id=parent_id,
                 student_id=student.id,
                 type=kind,
-                title=f"SchoolGuard: {kind.title()}",
-                message=message,
+                title=notif_title,
+                message=body,
                 status="PENDING",
             )
             db.add(notif)
             db.flush()
 
             if parent and parent.telegram_id:
-                formatted_msg = f"🔔 <b>SchoolGuard Alert</b>\n\n{message}"
+                header = "🔔 <b>የስኩልጋርድ ማሳወቂያ</b>" if lang == "am" else "🔔 <b>SchoolGuard Alert</b>"
+                formatted_msg = f"{header}\n\n{body}"
                 # Immediately hand off to background pool - zero HTTP latency!
                 dispatch_notification_async(notif.id, parent.telegram_id, formatted_msg)
 
@@ -237,16 +385,12 @@ def mark_arrival(db: Session, student_id: int, actor_id: int, method: str, when:
         recorded_by=actor_id,
     ))
 
-    arrival_label = "Arrival Updated / Re-entry" if is_update else "Arrival Recorded"
+    msg_dict = build_arrival_message(student, when, method, is_update=is_update)
     enqueue_notifications(
         db,
         student,
         "ARRIVAL",
-        f"✅ <b>{arrival_label}</b>\n"
-        f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-        f"📅 Date: {when.strftime('%Y-%m-%d')}\n"
-        f"⏰ <b>Arrival Time:</b> {when.strftime('%I:%M:%S %p')}\n"
-        f"📋 Method: {method or 'Gate Check'}"
+        msg_dict,
     )
 
     db.commit()
@@ -277,20 +421,12 @@ def mark_departure(db: Session, student_id: int, actor_id: int, method: str, whe
         recorded_by=actor_id,
     ))
 
-    arrival_str = a.arrival_time.strftime('%I:%M:%S %p') if a.arrival_time else "N/A"
-    departure_str = when.strftime('%I:%M:%S %p')
-    departure_label = "Departure Updated" if is_update else "Departure Recorded"
-
+    msg_dict = build_departure_message(student, when, method, a.arrival_time, is_update=is_update)
     enqueue_notifications(
         db,
         student,
         "DEPARTURE",
-        f"✅ <b>{departure_label}</b>\n"
-        f"Student: <b>{student.notification_name}</b> (Code: {student.student_code})\n"
-        f"📅 Date: {when.strftime('%Y-%m-%d')}\n"
-        f"⏰ <b>Arrival Time:</b> {arrival_str}\n"
-        f"⏰ <b>Departure Time:</b> {departure_str}\n"
-        f"📋 Method: {method or 'Gate Check'}"
+        msg_dict,
     )
 
     db.commit()

@@ -18,8 +18,22 @@ def link_self(data: TelegramLinkIn, db: Session = Depends(get_db), user: User = 
     target = db.get(User, user.id)
     target.telegram_id = data.telegram_id
     target.telegram_username = data.telegram_username
+    if data.language:
+        target.language = data.language
     db.commit()
     return {"message": "Telegram account linked successfully"}
+
+
+@router.post("/set-language")
+def set_language(data: TelegramLinkIn, db: Session = Depends(get_db)):
+    """Set language preference for a telegram user."""
+    user = db.query(User).filter(User.telegram_id == data.telegram_id).first()
+    if not user:
+        raise HTTPException(404, "Telegram account not linked to any user")
+    if data.language:
+        user.language = data.language
+        db.commit()
+    return {"message": "Language updated successfully", "language": user.language}
 
 
 @router.post("/link")
@@ -30,5 +44,7 @@ def link_telegram(data: TelegramLinkIn, parent_id: int, db: Session = Depends(ge
         raise HTTPException(404, "User not found")
     target.telegram_id = data.telegram_id
     target.telegram_username = data.telegram_username
+    if data.language:
+        target.language = data.language
     db.commit()
     return {"message": f"Telegram linked to {target.full_name}"}

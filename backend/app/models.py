@@ -29,6 +29,7 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(30))
     status: Mapped[str] = mapped_column(String(30), default="ACTIVE")
+    language: Mapped[str] = mapped_column(String(10), default="en")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     school = relationship("School")
 
