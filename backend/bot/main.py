@@ -597,6 +597,10 @@ async def got_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data.pop("phone", None)
             await help_command(update, context)
             return ConversationHandler.END
+        if _is_language(text):
+            context.user_data.pop("phone", None)
+            await language_command(update, context)
+            return ConversationHandler.END
         if _is_link(text):
             return await link_start(update, context)
 
@@ -646,6 +650,10 @@ async def got_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if _is_help(password):
         context.user_data.pop("phone", None)
         await help_command(update, context)
+        return ConversationHandler.END
+    if _is_language(password):
+        context.user_data.pop("phone", None)
+        await language_command(update, context)
         return ConversationHandler.END
     if _is_link(password):
         return await link_start(update, context)
@@ -894,6 +902,10 @@ def build_bot_app(token: str = None) -> Application:
         entry_points=[
             CommandHandler("start", start),
             CommandHandler("language", language_command),
+            MessageHandler(
+                filters.Regex(r"(?i).*(language|ቋንቋ).*"),
+                language_command
+            ),
         ],
         states={
             ASK_LANGUAGE: [
