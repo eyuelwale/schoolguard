@@ -11,8 +11,8 @@ except Exception:
     pass
 
 from telegram import (
-    Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand, KeyboardButton,
-    InlineKeyboardMarkup, InlineKeyboardButton
+    Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand, BotCommandScopeChat,
+    KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 )
 from telegram.request import HTTPXRequest
 from telegram.ext import (
@@ -26,7 +26,26 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 API_BASE = (os.getenv("SCHOOLGUARD_API_URL") or "http://localhost:8000").rstrip("/")
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
-# ─── Conversation States ──────────────────────────────────────────────────────
+# ─── Per-language bot command menus ─────────────────────────────────────────
+BOT_COMMANDS = {
+    "en": [
+        BotCommand("start",    "Open main menu & dashboard"),
+        BotCommand("link",     "Link your SchoolGuard account"),
+        BotCommand("children", "View your linked children"),
+        BotCommand("status",   "View today's attendance status"),
+        BotCommand("language", "Change language / ቋንቋ ቀይር"),
+        BotCommand("help",     "Get help & instructions"),
+    ],
+    "am": [
+        BotCommand("start",    "ዋናውን ምናሌ ክፈቱ"),
+        BotCommand("link",     "የ SchoolGuard መለያዎን ያስተሳስሩ"),
+        BotCommand("children", "ልጆቻቸውን ይመልከቱ"),
+        BotCommand("status",   "የዛሬ የመገኘት ሁኔታ ይመልከቱ"),
+        BotCommand("language", "ቋንቋ ቀይሩ / Change language"),
+        BotCommand("help",     "እርዳታ ያግኙ"),
+    ],
+}
+
 ASK_LANGUAGE, ASK_PHONE, ASK_PASSWORD = range(3)
 SESSION_TIMEOUT_MINUTES = 15
 CONVERSATION_TIMEOUT_SECONDS = SESSION_TIMEOUT_MINUTES * 60
@@ -428,10 +447,18 @@ async def got_language_callback(update: Update, context: ContextTypes.DEFAULT_TY
     query = update.callback_query
     await query.answer()
     touch_activity(context)
-    if query.data == "lang_am":
-        context.user_data["lang"] = "am"
-    else:
-        context.user_data["lang"] = "en"
+    lang = "am" if query.data == "lang_am" else "en"
+    context.user_data["lang"] = lang
+
+    # Update the Menu button commands for this specific chat
+    try:
+        await context.bot.set_my_commands(
+            BOT_COMMANDS[lang],
+            scope=BotCommandScopeChat(chat_id=query.message.chat_id)
+        )
+    except Exception as e:
+        print(f"Could not set per-chat commands: {e}")
+
     # Edit the message to show confirmation
     await query.edit_message_text(
         tr(context, "language_set"),
@@ -780,18 +807,13 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ─── Bot Commands Registration ────────────────────────────────────────────────
 
 async def post_init(application: Application):
-    """Registers the bot commands so the Telegram app displays the persistent blue Menu button."""
-    commands = [
-        BotCommand("start", "Open main menu & dashboard"),
-        BotCommand("link", "Link your SchoolGuard account"),
-        BotCommand("children", "View your linked children"),
-        BotCommand("status", "View today's attendance status"),
-        BotCommand("language", "Change language / ቋንቋ ቀይር"),
-        BotCommand("help", "Get help & instructions"),
-    ]
+    """Registers the bot commands for both English (default) and Amharic."""
     try:
-        await application.bot.set_my_commands(commands)
-        print("Telegram bot commands & menu button registered successfully.")
+        # Default (English) commands — shown to users whose language isn't overridden
+        await application.bot.set_my_commands(BOT_COMMANDS["en"])
+        # Amharic commands — shown when Telegram app language is Amharic
+        await application.bot.set_my_commands(BOT_COMMANDS["am"], language_code="am")
+        print("Telegram bot commands & menu button registered successfully (EN + AM).")
     except Exception as e:
         print(f"Notice: could not set bot commands yet ({e})")
 
