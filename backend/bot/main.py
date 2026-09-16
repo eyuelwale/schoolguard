@@ -881,12 +881,13 @@ async def post_init(application: Application):
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
-def main():
-    if not BOT_TOKEN:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN is missing in .env")
+def build_bot_app(token: str = None) -> Application:
+    tok = token or BOT_TOKEN
+    if not tok:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is missing")
 
     request = HTTPXRequest(connect_timeout=30.0, read_timeout=30.0)
-    app = Application.builder().token(BOT_TOKEN).request(request).post_init(post_init).build()
+    application = Application.builder().token(tok).request(request).post_init(post_init).build()
 
     # ── Language selection conversation (triggered by /start or /language) ──
     lang_conv = ConversationHandler(
@@ -944,18 +945,46 @@ def main():
         conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
-    app.add_handler(CallbackQueryHandler(got_language_callback, pattern="^lang_(en|am)$"))
-    app.add_handler(lang_conv)
-    app.add_handler(link_conv)
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("children", children_command))
-    app.add_handler(CommandHandler("status", status_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown))
+    application.add_handler(CallbackQueryHandler(got_language_callback, pattern="^lang_(en|am)$"))
+    application.add_handler(lang_conv)
+    application.add_handler(link_conv)
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("children", children_command))
+    application.add_handler(CommandHandler("status", status_command))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown))
 
+    return application
+
+
+async def start_bot_polling(application: Application):
+    """Initializes and runs bot polling inside an async loop."""
+    print("Telegram Bot: Initializing polling worker in cloud background...")
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling(bootstrap_retries=5)
+    print("Telegram Bot: Polling worker successfully running in background.")
+
+
+async def stop_bot_polling(application: Application):
+    """Gracefully shuts down the bot polling."""
+    print("Telegram Bot: Shutting down polling worker...")
+    try:
+        if application.updater and application.updater.running:
+            await application.updater.stop()
+        if application.running:
+            await application.stop()
+        await application.shutdown()
+        print("Telegram Bot: Shut down cleanly.")
+    except Exception as e:
+        print(f"Telegram Bot: Error during shutdown: {e}")
+
+
+def main():
+    app = build_bot_app()
     print(f"SchoolGuard Telegram bot running (polling)... API base: {API_BASE}")
     app.run_polling(bootstrap_retries=5)
 
 
-
 if __name__ == "__main__":
     main()
+
