@@ -10,10 +10,14 @@ try:
 except Exception:
     pass
 
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand, KeyboardButton
+from telegram import (
+    Update, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand, KeyboardButton,
+    InlineKeyboardMarkup, InlineKeyboardButton
+)
 from telegram.request import HTTPXRequest
 from telegram.ext import (
-    Application, CommandHandler, MessageHandler, ContextTypes, filters, ConversationHandler
+    Application, CommandHandler, MessageHandler, ContextTypes, filters,
+    ConversationHandler, CallbackQueryHandler
 )
 
 # Load .env from the project root (two levels up from this file)
@@ -243,12 +247,13 @@ def get_main_menu(context: ContextTypes.DEFAULT_TYPE) -> ReplyKeyboardMarkup:
     )
 
 
-def get_language_keyboard() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        [[STRINGS["en"]["btn_english"], STRINGS["en"]["btn_amharic"]]],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
+def get_language_inline_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(STRINGS["en"]["btn_english"], callback_data="lang_en"),
+            InlineKeyboardButton(STRINGS["en"]["btn_amharic"], callback_data="lang_am"),
+        ]
+    ])
 
 
 def touch_activity(context: ContextTypes.DEFAULT_TYPE):
@@ -298,8 +303,12 @@ def _is_lang_choice(text: str) -> bool: return text.strip() in {STRINGS["en"]["b
 def get_linked_parent(tg_id: int):
     """Fetch User record if this Telegram user is already linked."""
     try:
-        from backend.app.database import SessionLocal
-        from backend.app.models import User
+        try:
+            from backend.app.database import SessionLocal
+            from backend.app.models import User
+        except ModuleNotFoundError:
+            from app.database import SessionLocal
+            from app.models import User
         db = SessionLocal()
         try:
             return db.query(User).filter(User.telegram_id == tg_id).first()
@@ -313,8 +322,12 @@ def get_linked_parent(tg_id: int):
 def get_parent_children(parent_id: int):
     """Retrieve all linked students for this parent."""
     try:
-        from backend.app.database import SessionLocal
-        from backend.app.models import ParentStudent, Student, ClassRoom
+        try:
+            from backend.app.database import SessionLocal
+            from backend.app.models import ParentStudent, Student, ClassRoom
+        except ModuleNotFoundError:
+            from app.database import SessionLocal
+            from app.models import ParentStudent, Student, ClassRoom
         db = SessionLocal()
         try:
             links = db.query(ParentStudent).filter(ParentStudent.parent_id == parent_id).all()
@@ -338,8 +351,12 @@ def get_parent_children(parent_id: int):
 def get_children_today_attendance(parent_id: int):
     """Retrieve today's attendance logs for all linked students."""
     try:
-        from backend.app.database import SessionLocal
-        from backend.app.models import ParentStudent, Student, Attendance
+        try:
+            from backend.app.database import SessionLocal
+            from backend.app.models import ParentStudent, Student, Attendance
+        except ModuleNotFoundError:
+            from app.database import SessionLocal
+            from app.models import ParentStudent, Student, Attendance
         db = SessionLocal()
         try:
             links = db.query(ParentStudent).filter(ParentStudent.parent_id == parent_id).all()
@@ -365,32 +382,33 @@ def get_children_today_attendance(parent_id: int):
 # ─── Language Selection ───────────────────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /start — show language picker if not yet set, else show main menu."""
+    """Handle /start — show inline language buttons, then main menu."""
     touch_activity(context)
     if "lang" not in context.user_data:
         await update.message.reply_text(
             STRINGS["en"]["select_language"],
             parse_mode="Markdown",
-            reply_markup=get_language_keyboard()
+            reply_markup=get_language_inline_keyboard()
         )
-        return ASK_LANGUAGE
+        # Do NOT return a conversation state — inline buttons use CallbackQueryHandler
+        return ConversationHandler.END
     return await show_main_menu(update, context)
 
 
 async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /language command — reset language selection."""
+    """Handle /language command — show inline language buttons."""
     touch_activity(context)
     context.user_data.pop("lang", None)
     await update.message.reply_text(
         STRINGS["en"]["select_language"],
         parse_mode="Markdown",
-        reply_markup=get_language_keyboard()
+        reply_markup=get_language_inline_keyboard()
     )
-    return ASK_LANGUAGE
+    return ConversationHandler.END
 
 
 async def got_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle language button press."""
+    """Handle text-based language selection (fallback for reply keyboard)."""
     touch_activity(context)
     text = (update.message.text or "").strip()
     if text == STRINGS["en"]["btn_amharic"]:
@@ -403,6 +421,32 @@ async def got_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=ReplyKeyboardRemove()
     )
     return await show_main_menu(update, context)
+
+
+async def got_language_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle inline language button press (callback query)."""
+    query = update.callback_query
+    await query.answer()
+    touch_activity(context)
+    if query.data == "lang_am":
+        context.user_data["lang"] = "am"
+    else:
+        context.user_data["lang"] = "en"
+    # Edit the message to show confirmation
+    await query.edit_message_text(
+        tr(context, "language_set"),
+        parse_mode="Markdown"
+    )
+    # Show main menu
+    tg_user = update.effective_user
+    parent = get_linked_parent(tg_user.id) if tg_user else None
+    msg = tr(context, "welcome_linked", name=parent.full_name) if parent else tr(context, "welcome_new")
+    await context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text=msg,
+        parse_mode="Markdown",
+        reply_markup=get_main_menu(context)
+    )
 
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -817,6 +861,7 @@ def main():
         conversation_timeout=CONVERSATION_TIMEOUT_SECONDS,
     )
 
+    app.add_handler(CallbackQueryHandler(got_language_callback, pattern="^lang_(en|am)$"))
     app.add_handler(lang_conv)
     app.add_handler(link_conv)
     app.add_handler(CommandHandler("help", help_command))
