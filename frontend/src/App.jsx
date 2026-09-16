@@ -3834,12 +3834,12 @@ function AuthShell({ onLoginSuccess }) {
       </div>
 
       <div className="login-card">
-        <div className="eyebrow">{mode === "login" ? "STAFF & PARENT PORTAL" : "SYSTEM SETUP"}</div>
-        <h2>{mode === "login" ? "Sign in to SchoolGuard" : "Bootstrap Initial Admin"}</h2>
+        <div className="eyebrow">{mode === "login" ? "STAFF & PARENT PORTAL" : "CREATE ACCOUNT"}</div>
+        <h2>{mode === "login" ? "Sign in to SchoolGuard" : "Create Account"}</h2>
         <p className="muted">
           {mode === "login"
             ? "Enter your credentials to control and inspect the system."
-            : "First-time setup: initialize the root Administrator account."}
+            : "Create your Administrator account to manage the system."}
         </p>
 
         {success && <div className="modal-success">{success}</div>}
@@ -3858,7 +3858,7 @@ function AuthShell({ onLoginSuccess }) {
             <button className="primary full" disabled={loading}>{loading ? "Verifying" : "Sign in"}</button>
 
             <div className="login-footer-switch">
-              Need first-time setup? <button type="button" onClick={() => { setError(""); setMode("bootstrap"); }}>Bootstrap Root Admin</button>
+              Don't have an account? <button type="button" onClick={() => { setError(""); setMode("bootstrap"); }}>Create Account</button>
             </div>
           </form>
         ) : (
@@ -3879,10 +3879,10 @@ function AuthShell({ onLoginSuccess }) {
               Master Password *
               <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
             </label>
-            <button className="primary full" disabled={loading}>{loading ? "Bootstrapping" : "Create Administrator"}</button>
+            <button className="primary full" disabled={loading}>{loading ? "Creating..." : "Create Administrator"}</button>
 
             <div className="login-footer-switch">
-              Already initialized? <button type="button" onClick={() => { setError(""); setMode("login"); }}>Back to Login</button>
+              Already have an account? <button type="button" onClick={() => { setError(""); setMode("login"); }}>Back to Sign in</button>
             </div>
           </form>
         )}
