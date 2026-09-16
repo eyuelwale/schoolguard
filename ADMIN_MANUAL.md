@@ -115,7 +115,7 @@ Before registering students, configure your school entity and classroom sections
    - **Full Name**: (e.g. *Alemayehu Tadesse*)
    - **Email Address**: (used for login)
    - **Phone Number**: (e.g. `+251911223344`)
-   - **Password**: Initial password.
+   - **Password**: Secure password set by the admin.
    - **Role**: Select `TEACHER` (or `SECURITY` for gate guards).
 4. Click **Save**.
 

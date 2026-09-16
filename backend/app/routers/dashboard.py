@@ -16,4 +16,4 @@ def dashboard(db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER
     late = db.query(func.count(Attendance.id)).filter(Attendance.attendance_date==day, Attendance.status=="LATE").scalar() or 0
     absent = db.query(func.count(Attendance.id)).filter(Attendance.attendance_date==day, Attendance.status=="ABSENT").scalar() or 0
     classes = db.query(func.count(ClassRoom.id)).filter(ClassRoom.status=="ACTIVE").scalar() or 0
-    return {"date": str(day), "total_students": total, "present": present, "late": late, "absent": absent, "classes": classes}
+    return {"date": day.strftime("%d/%m/%Y"), "total_students": total, "present": present, "late": late, "absent": absent, "classes": classes}

@@ -40,6 +40,34 @@ const navItems = [
   { key: "notifications", label: "Notifications & Logs", icon: Bell },
 ];
 
+/* Date formatters: DD/MM/YYYY */
+function formatDateDMY(val) {
+  if (!val) return "";
+  const str = String(val).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+  const dateObj = new Date(val);
+  if (isNaN(dateObj.getTime())) return str;
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const year = dateObj.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function formatDateTimeDMY(val) {
+  if (!val) return "";
+  const dateObj = new Date(val);
+  if (isNaN(dateObj.getTime())) return formatDateDMY(val);
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const year = dateObj.getFullYear();
+  const time = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${day}/${month}/${year} ${time}`;
+}
+
 /*  Alert Banner (Success / Error)  */
 function AlertBanner({ feedback, onClose }) {
   if (!feedback) return null;
@@ -804,7 +832,7 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
     full_name: "",
     email: "",
     phone: "",
-    password: "Teacher123!",
+    password: "",
     class_id: classes[0]?.id || "",
     academic_year: "2025-2026",
   });
@@ -877,7 +905,7 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
         </div>
         <div className="form-row">
           <label>
-            Initial Password *
+            Password *
             <input
               type="password"
               value={form.password}
@@ -1117,7 +1145,7 @@ function StudentDetailsModal({ studentId, onClose }) {
               <h3 style={{ fontSize: 20 }}>
                 {[student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ")}
               </h3>
-              <p>Code: <strong>{student.student_code}</strong> | Gender: {student.gender || ""} | DOB: {student.date_of_birth || ""}</p>
+              <p>Code: <strong>{student.student_code}</strong> | Gender: {student.gender || ""} | DOB: {formatDateDMY(student.date_of_birth) || ""}</p>
             </div>
             <span className="pill success">{student.status}</span>
           </div>
@@ -1142,7 +1170,7 @@ function StudentDetailsModal({ studentId, onClose }) {
               <tbody>
                 {history.map((r) => (
                   <tr key={r.id}>
-                    <td><strong>{r.attendance_date}</strong></td>
+                    <td><strong>{formatDateDMY(r.attendance_date)}</strong></td>
                     <td>{r.arrival_time ? new Date(r.arrival_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</td>
                     <td>{r.departure_time ? new Date(r.departure_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</td>
                     <td><span className={`status ${r.status?.toLowerCase()}`}>{r.status}</span></td>
@@ -1584,7 +1612,7 @@ function DashboardView({ onNavigate }) {
         <div>
           <div className="eyebrow">SYSTEM OVERVIEW</div>
           <h2>Good day </h2>
-          <p>Live school status & attendance dashboard  {d.date || "Today"}</p>
+          <p>Live school status & attendance dashboard • {formatDateDMY(d.date) || "Today"}</p>
         </div>
         <div className="header-actions">
           <button className="secondary" onClick={load}><RefreshCw size={15} /> Refresh</button>
@@ -2450,7 +2478,7 @@ function AttendanceView() {
         });
         saved = res.data?.length || 0;
         const label = eventType === "ARRIVAL" ? "Arrivals" : "Departures";
-        setSaveResult({ success: true, message: `⚡ Saved ${saved} ${label} for ${selectedDate} instantly! Parent alerts dispatched.` });
+        setSaveResult({ success: true, message: `⚡ Saved ${saved} ${label} for ${formatDateDMY(selectedDate)} instantly! Parent alerts dispatched.` });
       }
       loadAttendance();
     } catch (err) {
@@ -2535,7 +2563,7 @@ function AttendanceView() {
 
           {/* Date */}
           <label style={{ flex: "1 1 140px", minWidth: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", display: "block", marginBottom: 6 }}>📅 Date</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", display: "block", marginBottom: 6 }}>📅 Date ({formatDateDMY(selectedDate)})</span>
             <input type="date" value={selectedDate} max={today}
               onChange={(e) => { setSelectedDate(e.target.value); setSaveResult(null); }}
               style={{ width: "100%", minWidth: 0 }} />
@@ -2801,7 +2829,7 @@ function AttendanceView() {
         <div className="panel table-panel">
           <div className="panel-head">
             <div>
-              <h3>Attendance Log — {selectedDate}</h3>
+              <h3>Attendance Log — {formatDateDMY(selectedDate)}</h3>
               <p>{existingRecords.length} record(s) saved for this date</p>
             </div>
             <button className="secondary btn-sm" onClick={loadAttendance}><RefreshCw size={14} /> Refresh</button>
@@ -2913,7 +2941,7 @@ function AttendanceView() {
       {deleteAttendance && (
         <ConfirmModal
           title="Delete Attendance Record"
-          message={`Are you sure you want to permanently delete the attendance record for "${deleteAttendance.studentName}" on ${selectedDate}?`}
+          message={`Are you sure you want to permanently delete the attendance record for "${deleteAttendance.studentName}" on ${formatDateDMY(selectedDate)}?`}
           onConfirm={handleDeleteAttendance}
           onClose={() => setDeleteAttendance(null)}
           loading={deleteLoading}
@@ -3655,7 +3683,7 @@ function NotificationsView() {
                         style={{ cursor: "pointer", width: 16, height: 16 }}
                       />
                     </td>
-                    <td>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</td>
+                    <td>{log.created_at ? formatDateTimeDMY(log.created_at) : ""}</td>
                     <td><span className="badge-role">{log.type}</span></td>
                     <td><strong>{log.title}</strong></td>
                     <td style={{ maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.message}</td>
