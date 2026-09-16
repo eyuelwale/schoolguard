@@ -37,10 +37,10 @@ BOT_COMMANDS = {
         BotCommand("help",     "Get help & instructions"),
     ],
     "am": [
-        BotCommand("start",    "ዋናውን ምናሌ ክፈቱ"),
+        BotCommand("start",    "ዋና ማውጫ"),
         BotCommand("link",     "የ SchoolGuard መለያዎን ያስተሳስሩ"),
-        BotCommand("children", "ልጆቻቸውን ይመልከቱ"),
-        BotCommand("status",   "የዛሬ የመገኘት ሁኔታ ይመልከቱ"),
+        BotCommand("children", "ልጆችዎን ይመልከቱ"),
+        BotCommand("status",   "የዛሬውን አቴንዳንስ ሁኔታ ይመልከቱ"),
         BotCommand("language", "ቋንቋ ቀይሩ / Change language"),
         BotCommand("help",     "እርዳታ ያግኙ"),
     ],
@@ -231,9 +231,9 @@ STRINGS = {
         "help_text": (
             "ℹ️ *የ SchoolGuard ቦት መመሪያ*\n\n"
             "• *🔗 /link* — ስልክ ቁጥርና ይለፍ ቃል በመጠቀም የወላጅ መለያ ያስተሳስሩ\n"
-            "• *👶 /children* — የተሳሰሩ ልጆቻቸውን እና ክፍሎቻቸውን ይመልከቱ\n"
-            "• *📊 /status* — የዛሬ የምጫ እና የወጪ ሁኔታ ይመልከቱ\n"
-            "• *🛡️ /start* — ዋናውን ምናሌ ዳግም ክፈቱ\n"
+            "• *👶 /children* — የተሳሰሩ ልጆችዎን ይመልከቱ\n"
+            "• *📊 /status* — የዛሬውን አቴንዳንስ ሁኔታ ይመልከቱ\n"
+            "• *🛡️ /start* — ዋና ማውጫ\n"
             "• *🌐 /language* — ቋንቋ ቀይሩ\n"
             "• *❌ /cancel* — አሁን ያለውን ተግባር ሰርዙ\n\n"
             "ለእርዳታ ወይም የመለያ ማዋቀሪያ፣ ከትምህርት ቤቱ ቢሮ ጋር ያነጋግሩ።"
