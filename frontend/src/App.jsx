@@ -3783,10 +3783,14 @@ function NotificationsView() {
    AUTH VIEW
 */
 
-function AuthShell({ onLoginSuccess }) {
+function AuthShell({ onLoginSuccess, sessionNotice }) {
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [error, setError] = useState(sessionNotice || "");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (sessionNotice) setError(sessionNotice);
+  }, [sessionNotice]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -3871,6 +3875,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [mobile, setMobile] = useState(false);
   const [modalSelfTelegram, setModalSelfTelegram] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState("");
 
   const fetchCurrentUser = () => {
     if (localStorage.getItem("schoolguard_token")) {
@@ -3887,8 +3892,43 @@ export default function App() {
     if (authed) fetchCurrentUser();
   }, [authed]);
 
+  // Automatic session timeout after 15 minutes of inactivity
+  useEffect(() => {
+    if (!authed) return;
+
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+    let timerId;
+
+    const resetIdleTimer = () => {
+      if (timerId) clearTimeout(timerId);
+      timerId = setTimeout(() => {
+        localStorage.removeItem("schoolguard_token");
+        setCurrentUser(null);
+        setAuthed(false);
+        setSessionNotice("⚠️ Your session has timed out due to 15 minutes of inactivity. Please sign in again.");
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    events.forEach((evt) => window.addEventListener(evt, resetIdleTimer, { passive: true }));
+    resetIdleTimer();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      events.forEach((evt) => window.removeEventListener(evt, resetIdleTimer));
+    };
+  }, [authed]);
+
   if (!authed) {
-    return <AuthShell onLoginSuccess={() => setAuthed(true)} />;
+    return (
+      <AuthShell
+        onLoginSuccess={() => {
+          setSessionNotice("");
+          setAuthed(true);
+        }}
+        sessionNotice={sessionNotice}
+      />
+    );
   }
 
   return (
@@ -3946,7 +3986,7 @@ export default function App() {
           <button onClick={() => setModalSelfTelegram(true)}>
             <Send size={16} /> Link My Telegram
           </button>
-          <button onClick={() => { localStorage.removeItem("schoolguard_token"); setAuthed(false); }}>
+          <button onClick={() => { localStorage.removeItem("schoolguard_token"); setCurrentUser(null); setSessionNotice(""); setAuthed(false); }}>
             <LogOut size={16} /> Sign Out
           </button>
         </div>
