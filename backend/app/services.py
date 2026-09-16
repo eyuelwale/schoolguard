@@ -211,7 +211,7 @@ def build_arrival_message(student: Student, when: datetime, method: str | None, 
     method_am = translate_method(method_val)
 
     en_label = "Arrival Updated / Re-entry" if is_update else "Arrival Recorded"
-    am_label = "የመግቢያ ሰዓት ተዘምኗል" if is_update else "ተማሪ ትምህርት ቤት ደርሷል / ገብቷል"
+    am_label = "የተገኘበት/የተገኘችበት ሰዓት ተዘምኗል" if is_update else "ተማሪ ትምህርት ቤት ደርሷል / ገብቷል"
 
     en = (
         f"✅ <b>{en_label}</b>\n"
@@ -224,7 +224,7 @@ def build_arrival_message(student: Student, when: datetime, method: str | None, 
         f"✅ <b>{am_label}</b>\n"
         f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
         f"📅 ቀን: {date_str}\n"
-        f"⏰ <b>የመግቢያ ሰዓት:</b> {time_str}\n"
+        f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {time_str}\n"
         f"📋 ዘዴ: {method_am}"
     )
     return {"en": en, "am": am}
@@ -239,7 +239,7 @@ def build_departure_message(student: Student, when: datetime, method: str | None
     method_am = translate_method(method_val)
 
     en_label = "Departure Updated" if is_update else "Departure Recorded"
-    am_label = "የመውጫ ሰዓት ተዘምኗል" if is_update else "ተማሪ ከትምህርት ቤት ወጥቷል"
+    am_label = "የወጣበት/የወጣችበት ሰዓት ተዘምኗል" if is_update else "ተማሪ ከትምህርት ቤት ወጥቷል"
 
     en = (
         f"✅ <b>{en_label}</b>\n"
@@ -253,8 +253,8 @@ def build_departure_message(student: Student, when: datetime, method: str | None
         f"✅ <b>{am_label}</b>\n"
         f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
         f"📅 ቀን: {date_str}\n"
-        f"⏰ <b>የመግቢያ ሰዓት:</b> {arr_str_am}\n"
-        f"⏰ <b>የመውጫ ሰዓት:</b> {dep_str}\n"
+        f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {arr_str_am}\n"
+        f"⏰ <b>የወጣበት/የወጣችበት ሰዓት:</b> {dep_str}\n"
         f"📋 ዘዴ: {method_am}"
     )
     return {"en": en, "am": am}
@@ -292,8 +292,8 @@ def build_status_message(student: Student, status_val: str, date_val: date, arri
         f"{icon} <b>የመገኘት ሁኔታ: {status_am}</b>\n"
         f"ተማሪ: <b>{student.notification_name}</b> (መለያ: {student.student_code})\n"
         f"📅 ቀን: {date_str}\n"
-        f"⏰ <b>የመግቢያ ሰዓት:</b> {arr_str_am}\n"
-        f"⏰ <b>የመውጫ ሰዓት:</b> {dep_str_am}\n"
+        f"⏰ <b>የተገኘበት/የተገኘችበት ሰዓት:</b> {arr_str_am}\n"
+        f"⏰ <b>የወጣበት/የወጣችበት ሰዓት:</b> {dep_str_am}\n"
         f"📋 ዘዴ: {method_am}"
     )
     return {"en": en, "am": am}

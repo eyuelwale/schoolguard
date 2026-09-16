@@ -790,8 +790,8 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "EXCUSED": "ፈቃድ የተሰጠው" if lang == "am" else "EXCUSED",
     }
     lbl_status = "ሁኔታ" if lang == "am" else "Status"
-    lbl_arr = "የመግቢያ ሰዓት" if lang == "am" else "Arrival"
-    lbl_dep = "የመውጫ ሰዓት" if lang == "am" else "Departure"
+    lbl_arr = "የተገኘበት/የተገኘችበት ሰዓት" if lang == "am" else "Arrival"
+    lbl_dep = "የወጣበት/የወጣችበት ሰዓት" if lang == "am" else "Departure"
 
     today_str = date_type.today().strftime("%Y-%m-%d")
     lines = [tr(context, "attendance_header", date=today_str)]
