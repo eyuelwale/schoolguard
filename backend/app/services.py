@@ -205,7 +205,7 @@ def translate_method(method: str | None) -> str:
 
 
 def build_arrival_message(student: Student, when: datetime, method: str | None = None, is_update: bool = False, recorder_name: str | None = None) -> dict[str, str]:
-    date_str = when.strftime('%Y-%m-%d')
+    date_str = when.strftime('%d/%m/%Y')
     time_str = when.strftime('%I:%M %p')
     admin_name = recorder_name or "System Admin"
 
@@ -230,7 +230,7 @@ def build_arrival_message(student: Student, when: datetime, method: str | None =
 
 
 def build_departure_message(student: Student, when: datetime, method: str | None = None, arrival_time: datetime | None = None, is_update: bool = False, recorder_name: str | None = None) -> dict[str, str]:
-    date_str = when.strftime('%Y-%m-%d')
+    date_str = when.strftime('%d/%m/%Y')
     dep_str = when.strftime('%I:%M %p')
     arr_str_en = arrival_time.strftime('%I:%M %p') if arrival_time else "Not recorded"
     arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
@@ -269,7 +269,7 @@ def build_status_message(student: Student, status_val: str, date_val: date, arri
     status_am = status_map_am.get(status_val, status_val)
     icon = "⚠️" if status_val == "LATE" else "❌" if status_val == "ABSENT" else "✅" if status_val == "PRESENT" else "ℹ️"
 
-    date_str = date_val.strftime('%Y-%m-%d')
+    date_str = date_val.strftime('%d/%m/%Y')
     arr_str_en = arrival_time.strftime('%I:%M %p') if arrival_time else "Not recorded"
     arr_str_am = arrival_time.strftime('%I:%M %p') if arrival_time else "አልተመዘገበም"
     dep_str_en = departure_time.strftime('%I:%M %p') if departure_time else "Not recorded"

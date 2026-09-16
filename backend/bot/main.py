@@ -793,7 +793,7 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lbl_arr = "የተገኘበት/የተገኘችበት ሰዓት" if lang == "am" else "Arrival"
     lbl_dep = "የወጣበት/የወጣችበት ሰዓት" if lang == "am" else "Departure"
 
-    today_str = date_type.today().strftime("%Y-%m-%d")
+    today_str = date_type.today().strftime("%d/%m/%Y")
     lines = [tr(context, "attendance_header", date=today_str)]
     for item in records:
         st = item["student"]
