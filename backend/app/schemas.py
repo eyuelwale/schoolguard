@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     phone: str | None = None
     password: str
     role: str = "PARENT"
+    language: str = "en"
 
 
 class UserLogin(BaseModel):
@@ -135,6 +136,7 @@ class UserUpdate(BaseModel):
     password: str | None = None
     telegram_id: int | None = None
     telegram_username: str | None = None
+    language: str | None = None
 
     @field_validator("email", "phone", "telegram_username", mode="before")
     @classmethod

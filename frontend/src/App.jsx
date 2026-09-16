@@ -455,6 +455,7 @@ function EditUserModal({ user, onClose, onSaved }) {
     password: "",
     telegram_id: user.telegram_id ? String(user.telegram_id) : "",
     telegram_username: user.telegram_username || "",
+    language: user.language || "am",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -473,6 +474,7 @@ function EditUserModal({ user, onClose, onSaved }) {
         status: form.status,
         telegram_id: form.telegram_id && String(form.telegram_id).trim() ? Number(String(form.telegram_id).trim()) : null,
         telegram_username: form.telegram_username?.trim() || null,
+        language: form.language || "am",
       };
       if (form.password && form.password.trim()) {
         payload.password = form.password.trim();
@@ -531,6 +533,13 @@ function EditUserModal({ user, onClose, onSaved }) {
             <input value={form.telegram_username} onChange={(e) => set("telegram_username", e.target.value)} />
           </label>
         </div>
+        <label>
+          Notification & Alert Language
+          <select value={form.language} onChange={(e) => set("language", e.target.value)}>
+            <option value="am">Amharic (አማርኛ)</option>
+            <option value="en">English</option>
+          </select>
+        </label>
         <label>
           New Password (leave blank to keep current)
           <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} />
@@ -3181,6 +3190,7 @@ function ParentsView({ currentUser }) {
                 <th>Phone</th>
                 <th>Linked Children</th>
                 <th>Telegram Sync</th>
+                <th>Language</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -3234,6 +3244,11 @@ function ParentsView({ currentUser }) {
                       ) : (
                         <span className="status absent">Not Linked</span>
                       )}
+                    </td>
+                    <td>
+                      <span className="pill info" style={{ fontWeight: 600, fontSize: 12 }}>
+                        {p.language === "am" ? "አማርኛ" : "English"}
+                      </span>
                     </td>
                     <td>
                       <div className="action-btns">

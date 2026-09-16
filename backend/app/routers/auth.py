@@ -18,6 +18,7 @@ def bootstrap_admin(data: UserCreate, db: Session = Depends(get_db)):
         phone=data.phone,
         password_hash=hash_password(data.password),
         role="ADMIN",
+        language=data.language or "en",
     )
     db.add(user)
     db.commit()
@@ -37,6 +38,7 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
         phone=data.phone,
         password_hash=hash_password(data.password),
         role=data.role.upper(),
+        language=data.language or "en",
     )
     db.add(user)
     db.commit()
