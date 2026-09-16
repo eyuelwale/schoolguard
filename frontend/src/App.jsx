@@ -3999,7 +3999,7 @@ export default function App() {
             <button className="menu-mobile" onClick={() => setMobile(true)}><Menu size={22} /></button>
             <div className="system-pill">
               <span className="dot" />
-              API Connected (:8000)
+              API Connected
             </div>
           </div>
 
