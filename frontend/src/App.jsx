@@ -3780,14 +3780,12 @@ function NotificationsView() {
 }
 
 /* 
-   AUTH & BOOTSTRAP VIEWS
+   AUTH VIEW
 */
 
 function AuthShell({ onLoginSuccess }) {
-  const [mode, setMode] = useState("login"); // "login" | "bootstrap"
-  const [form, setForm] = useState({ email: "", password: "", full_name: "", phone: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -3824,28 +3822,6 @@ function AuthShell({ onLoginSuccess }) {
     }
   }
 
-  async function handleBootstrap(e) {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      await api.post("/api/auth/bootstrap-admin", {
-        full_name: form.full_name,
-        email: form.email,
-        phone: form.phone,
-        password: form.password,
-        role: "ADMIN"
-      });
-      setSuccess("Administrator successfully bootstrapped! You can now log in.");
-      setMode("login");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to bootstrap admin");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="login-shell">
       <div className="login-art">
@@ -3862,58 +3838,25 @@ function AuthShell({ onLoginSuccess }) {
       </div>
 
       <div className="login-card">
-        <div className="eyebrow">{mode === "login" ? "STAFF & PARENT PORTAL" : "CREATE ACCOUNT"}</div>
-        <h2>{mode === "login" ? "Sign in to SchoolGuard" : "Create Account"}</h2>
+        <div className="eyebrow">STAFF & PARENT PORTAL</div>
+        <h2>Sign in to SchoolGuard</h2>
         <p className="muted">
-          {mode === "login"
-            ? "Enter your credentials to control and inspect the system."
-            : "Create your Administrator account to manage the system."}
+          Enter your credentials to control and inspect the system.
         </p>
 
-        {success && <div className="modal-success">{success}</div>}
         {error && <div className="error">{error}</div>}
 
-        {mode === "login" ? (
-          <form onSubmit={handleLogin}>
-            <label>
-              Email, Username or Phone
-              <input type="text" value={form.email} onChange={(e) => set("email", e.target.value)} required />
-            </label>
-            <label>
-              Password
-              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
-            </label>
-            <button className="primary full" disabled={loading}>{loading ? "Verifying" : "Sign in"}</button>
-
-            <div className="login-footer-switch">
-              Don't have an account? <button type="button" onClick={() => { setError(""); setMode("bootstrap"); }}>Create Account</button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleBootstrap}>
-            <label>
-              Admin Full Name *
-              <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required />
-            </label>
-            <label>
-              Admin Email *
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
-            </label>
-            <label>
-              Phone
-              <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
-            </label>
-            <label>
-              Master Password *
-              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
-            </label>
-            <button className="primary full" disabled={loading}>{loading ? "Creating..." : "Create Administrator"}</button>
-
-            <div className="login-footer-switch">
-              Already have an account? <button type="button" onClick={() => { setError(""); setMode("login"); }}>Back to Sign in</button>
-            </div>
-          </form>
-        )}
+        <form onSubmit={handleLogin}>
+          <label>
+            Email, Username or Phone
+            <input type="text" value={form.email} onChange={(e) => set("email", e.target.value)} required />
+          </label>
+          <label>
+            Password
+            <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
+          </label>
+          <button className="primary full" disabled={loading}>{loading ? "Verifying..." : "Sign in"}</button>
+        </form>
       </div>
     </div>
   );
