@@ -496,16 +496,16 @@ function EditUserModal({ user, onClose, onSaved }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <label>
             Telegram User ID
-            <input placeholder="e.g. 123456789" value={form.telegram_id} onChange={(e) => set("telegram_id", e.target.value)} />
+            <input value={form.telegram_id} onChange={(e) => set("telegram_id", e.target.value)} />
           </label>
           <label>
             Telegram @Username
-            <input placeholder="e.g. username" value={form.telegram_username} onChange={(e) => set("telegram_username", e.target.value)} />
+            <input value={form.telegram_username} onChange={(e) => set("telegram_username", e.target.value)} />
           </label>
         </div>
         <label>
           New Password (leave blank to keep current)
-          <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="••••••••" />
+          <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} />
         </label>
         {error && <div className="error">{error}</div>}
         <button className="primary full" disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
@@ -602,7 +602,7 @@ function EditAttendanceModal({ record, studentName, onClose, onSaved }) {
         </div>
         <label>
           Notes
-          <input value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional attendance notes..." />
+          <input value={form.notes} onChange={(e) => set("notes", e.target.value)} />
         </label>
         {error && <div className="error">{error}</div>}
         <button className="primary full" disabled={loading}>{loading ? "Saving..." : "Update Attendance"}</button>
@@ -695,19 +695,19 @@ function AddSchoolModal({ onClose, onSaved }) {
       <form onSubmit={submit} className="modal-form">
         <label>
           School Name *
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Addis Future Academy" required />
+          <input value={form.name} onChange={(e) => set("name", e.target.value)} required />
         </label>
         <label>
           School Code *
-          <input value={form.code} onChange={(e) => set("code", e.target.value)} placeholder="e.g. AFA-01" required />
+          <input value={form.code} onChange={(e) => set("code", e.target.value)} required />
         </label>
         <label>
           Address
-          <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="e.g. Bole, Addis Ababa" />
+          <input value={form.address} onChange={(e) => set("address", e.target.value)} />
         </label>
         <label>
           Phone
-          <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="e.g. +251 911 234567" />
+          <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         </label>
         {error && <div className="error">{error}</div>}
         <button className="primary full" disabled={loading}>{loading ? "Saving" : "Create School"}</button>
@@ -760,26 +760,26 @@ function AddClassModal({ schools, onClose, onSaved }) {
         <div className="form-row">
           <label>
             Class Name *
-            <input value={form.class_name} onChange={(e) => set("class_name", e.target.value)} placeholder="e.g. Grade 10 A" required />
+            <input value={form.class_name} onChange={(e) => set("class_name", e.target.value)} required />
           </label>
           <label>
             Class Code *
-            <input value={form.class_code} onChange={(e) => set("class_code", e.target.value)} placeholder="e.g. G10-A" required />
+            <input value={form.class_code} onChange={(e) => set("class_code", e.target.value)} required />
           </label>
         </div>
         <div className="form-row">
           <label>
             Grade *
-            <input value={form.grade} onChange={(e) => set("grade", e.target.value)} placeholder="e.g. 10" required />
+            <input value={form.grade} onChange={(e) => set("grade", e.target.value)} required />
           </label>
           <label>
             Section
-            <input value={form.section} onChange={(e) => set("section", e.target.value)} placeholder="e.g. A" />
+            <input value={form.section} onChange={(e) => set("section", e.target.value)} />
           </label>
         </div>
         <label>
           Academic Year *
-          <input value={form.academic_year} onChange={(e) => set("academic_year", e.target.value)} placeholder="e.g. 2025-2026" required />
+          <input value={form.academic_year} onChange={(e) => set("academic_year", e.target.value)} required />
         </label>
         <div className="form-row">
           <label>
@@ -854,7 +854,6 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
           <input
             value={form.full_name}
             onChange={(e) => set("full_name", e.target.value)}
-            placeholder="e.g. Almaz Bekele"
             required
           />
         </label>
@@ -865,7 +864,6 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
               type="email"
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
-              placeholder="teacher@school.edu"
               required
             />
           </label>
@@ -874,7 +872,6 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
             <input
               value={form.phone}
               onChange={(e) => set("phone", e.target.value)}
-              placeholder="+251 9..."
             />
           </label>
         </div>
@@ -906,7 +903,6 @@ function AddTeacherModal({ classes = [], onClose, onSaved }) {
             <input
               value={form.academic_year}
               onChange={(e) => set("academic_year", e.target.value)}
-              placeholder="2025-2026"
             />
           </label>
         )}
@@ -984,7 +980,7 @@ function AssignTeacherModal({ classes, teachers, initialTeacherId, onClose, onSa
         )}
         <label>
           Academic Year *
-          <input value={form.academic_year} onChange={(e) => set("academic_year", e.target.value)} placeholder="e.g. 2025-2026" required />
+          <input value={form.academic_year} onChange={(e) => set("academic_year", e.target.value)} required />
         </label>
         {error && <div className="error">{error}</div>}
         <button className="primary full" disabled={loading || !form.class_id || !form.teacher_id}>{loading ? "Saving" : "Assign Teacher"}</button>
@@ -1054,7 +1050,7 @@ function AddStudentModal({ schools, classes, onClose, onSaved }) {
         </div>
         <label>
           Student Code *
-          <input value={form.student_code} onChange={(e) => set("student_code", e.target.value)} placeholder="e.g. STU-1001" required />
+          <input value={form.student_code} onChange={(e) => set("student_code", e.target.value)} required />
         </label>
         <div className="form-row">
           <label>
@@ -1273,16 +1269,16 @@ function CreateUserModal({ onClose, onSaved }) {
       <form onSubmit={submit} className="modal-form">
         <label>
           Full Name *
-          <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="e.g. Almaz Bekele" required />
+          <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required />
         </label>
         <div className="form-row">
           <label>
             Email *
-            <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="user@school.edu" required />
+            <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
           </label>
           <label>
             Phone
-            <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+251 9..." />
+            <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
           </label>
         </div>
         <div className="form-row">
@@ -1296,7 +1292,7 @@ function CreateUserModal({ onClose, onSaved }) {
           </label>
           <label>
             Password *
-            <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="" required />
+            <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
           </label>
         </div>
         {error && <div className="error">{error}</div>}
@@ -1423,7 +1419,6 @@ function LinkTelegramModal({ parent, onClose, onSaved }) {
             type="number"
             value={form.telegram_id}
             onChange={(e) => set("telegram_id", e.target.value)}
-            placeholder="e.g. 123456789"
             required
           />
         </label>
@@ -1432,7 +1427,6 @@ function LinkTelegramModal({ parent, onClose, onSaved }) {
           <input
             value={form.telegram_username}
             onChange={(e) => set("telegram_username", e.target.value)}
-            placeholder="e.g. username (without @)"
           />
         </label>
         {error && <div className="error">{error}</div>}
@@ -1476,7 +1470,6 @@ function SelfLinkTelegramModal({ currentUser, onClose, onSaved }) {
             type="number"
             value={form.telegram_id}
             onChange={(e) => set("telegram_id", e.target.value)}
-            placeholder="e.g. 987654321"
             required
           />
         </label>
@@ -1485,7 +1478,6 @@ function SelfLinkTelegramModal({ currentUser, onClose, onSaved }) {
           <input
             value={form.telegram_username}
             onChange={(e) => set("telegram_username", e.target.value)}
-            placeholder="e.g. my_telegram_handle"
           />
         </label>
         {error && <div className="error">{error}</div>}
@@ -3857,11 +3849,11 @@ function AuthShell({ onLoginSuccess }) {
           <form onSubmit={handleLogin}>
             <label>
               Email, Username or Phone
-              <input type="text" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="admin@schoolguard.com or admin" required />
+              <input type="text" value={form.email} onChange={(e) => set("email", e.target.value)} required />
             </label>
             <label>
               Password
-              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="" required />
+              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
             </label>
             <button className="primary full" disabled={loading}>{loading ? "Verifying" : "Sign in"}</button>
 
@@ -3873,19 +3865,19 @@ function AuthShell({ onLoginSuccess }) {
           <form onSubmit={handleBootstrap}>
             <label>
               Admin Full Name *
-              <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} placeholder="e.g. Eyuel Wale" required />
+              <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required />
             </label>
             <label>
               Admin Email *
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="admin@school.edu" required />
+              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
             </label>
             <label>
               Phone
-              <input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+251 911 000000" />
+              <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             </label>
             <label>
               Master Password *
-              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="" required />
+              <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
             </label>
             <button className="primary full" disabled={loading}>{loading ? "Bootstrapping" : "Create Administrator"}</button>
 
