@@ -16,21 +16,21 @@ from ..services import (
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
 
 @router.post("/arrival", response_model=AttendanceOut)
-def arrival(data: AttendanceArrival, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER","SECURITY"))):
+def arrival(data: AttendanceArrival, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     try:
         return mark_arrival(db, data.student_id, user.id, data.method, data.arrival_time or datetime.now())
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 @router.post("/departure", response_model=AttendanceOut)
-def departure(data: AttendanceDeparture, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER","SECURITY"))):
+def departure(data: AttendanceDeparture, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     try:
         return mark_departure(db, data.student_id, user.id, data.method, data.departure_time or datetime.now())
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 @router.put("/status", response_model=AttendanceOut)
-def status(data: AttendanceStatus, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER"))):
+def status(data: AttendanceStatus, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     allowed = {"PRESENT","ABSENT","LATE","EXCUSED"}
     value = data.status.upper()
     if value not in allowed:
@@ -68,7 +68,7 @@ def status(data: AttendanceStatus, db: Session = Depends(get_db), user=Depends(r
 
 
 @router.post("/bulk", response_model=list[AttendanceOut])
-def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER"))):
+def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Bulk arrival, departure, or roll-call status for multiple students on a given date."""
     event = data.event_type.upper()
     if event not in {"ARRIVAL", "DEPARTURE", "STATUS"}:
@@ -143,20 +143,20 @@ def bulk_attendance(data: BulkAttendanceIn, db: Session = Depends(get_db), user=
 
 
 @router.get("/today", response_model=list[AttendanceOut])
-def today(db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER"))):
+def today(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     return db.query(Attendance).filter(Attendance.attendance_date == date_type.today()).all()
 
 @router.get("/date/{target_date}", response_model=list[AttendanceOut])
-def by_date(target_date: date_type, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER"))):
+def by_date(target_date: date_type, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     return db.query(Attendance).filter(Attendance.attendance_date == target_date).all()
 
 @router.get("/student/{student_id}", response_model=list[AttendanceOut])
-def history(student_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER","PARENT"))):
+def history(student_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     return db.query(Attendance).filter(Attendance.student_id == student_id).order_by(Attendance.attendance_date.desc()).limit(100).all()
 
 
 @router.put("/{attendance_id}", response_model=AttendanceOut)
-def update_attendance(attendance_id: int, data: AttendanceUpdate, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER", "SECURITY"))):
+def update_attendance(attendance_id: int, data: AttendanceUpdate, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     rec = db.get(Attendance, attendance_id)
     if not rec:
         raise HTTPException(404, "Attendance record not found")
@@ -172,7 +172,7 @@ def update_attendance(attendance_id: int, data: AttendanceUpdate, db: Session = 
 
 
 @router.delete("/{attendance_id}")
-def delete_attendance(attendance_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER", "SECURITY"))):
+def delete_attendance(attendance_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     rec = db.get(Attendance, attendance_id)
     if not rec:
         raise HTTPException(404, "Attendance record not found")

@@ -25,7 +25,7 @@ def link(data: LinkStudent, db: Session = Depends(get_db), user=Depends(roles("A
 
 
 @router.get("/links", response_model=list[ParentLinkOut])
-def list_links(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def list_links(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     rows = db.query(ParentStudent).all()
     results = []
     for r in rows:

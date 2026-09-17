@@ -9,7 +9,7 @@ from ..models import Attendance, Student, ClassRoom
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 @router.get("/")
-def dashboard(db: Session = Depends(get_db), user=Depends(roles("ADMIN","TEACHER"))):
+def dashboard(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     day = date.today()
     total = db.query(func.count(Student.id)).filter(Student.status=="ACTIVE").scalar() or 0
     present = db.query(func.count(Attendance.id)).filter(Attendance.attendance_date==day, Attendance.status=="PRESENT").scalar() or 0

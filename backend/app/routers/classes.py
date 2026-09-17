@@ -24,7 +24,7 @@ def create(data: ClassCreate, db: Session = Depends(get_db), user=Depends(roles(
 
 
 @router.get("/", response_model=list[ClassOut])
-def list_classes(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def list_classes(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     return db.query(ClassRoom).all()
 
 
@@ -47,7 +47,7 @@ def assign_teacher(data: AssignTeacher, db: Session = Depends(get_db), user=Depe
 
 
 @router.get("/teacher-assignments")
-def list_teacher_assignments(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def list_teacher_assignments(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     assignments = db.query(TeacherClass).all()
     results = []
     for a in assignments:
@@ -78,7 +78,7 @@ def delete_teacher_assignment(assignment_id: int, db: Session = Depends(get_db),
 
 
 @router.get("/{class_id}", response_model=ClassOut)
-def get_class(class_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def get_class(class_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     classroom = db.get(ClassRoom, class_id)
     if not classroom:
         raise HTTPException(404, "Class not found")

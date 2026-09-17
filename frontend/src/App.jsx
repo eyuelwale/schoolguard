@@ -3979,22 +3979,31 @@ export default function App() {
 
         <nav>
           <div className="nav-category">Main Navigation</div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                className={page === item.key ? "active" : ""}
-                onClick={() => {
-                  setPage(item.key);
-                  setMobile(false);
-                }}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {currentUser?.role === "ADMIN" ? (
+            navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  className={page === item.key ? "active" : ""}
+                  onClick={() => {
+                    setPage(item.key);
+                    setMobile(false);
+                  }}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })
+          ) : (
+            <div style={{ padding: "16px 12px", color: "#94a3b8", fontSize: "13px", lineHeight: "1.5" }}>
+              🔒 <strong>Standard User Account</strong>
+              <p style={{ marginTop: 6, fontSize: "12px", color: "#64748b" }}>
+                Only the administrator has permission to access system navigation, view data, and perform add, edit, or delete operations.
+              </p>
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-bottom">
@@ -4027,17 +4036,63 @@ export default function App() {
         </header>
 
         <section className="content">
-          {page === "dashboard" && <DashboardView onNavigate={(p) => setPage(p)} />}
-          {page === "schools" && <SchoolsView />}
-          {page === "classes" && <ClassesView />}
-          {page === "teachers" && <TeachersView />}
-          {page === "students" && <StudentsView />}
-          {page === "attendance" && <AttendanceView />}
-          {page === "parents" && <ParentsView currentUser={currentUser} />}
-          {page === "users" && <UsersView currentUser={currentUser} />}
-          {page === "notifications" && <NotificationsView />}
+          {currentUser?.role === "ADMIN" ? (
+            <>
+              {page === "dashboard" && <DashboardView onNavigate={(p) => setPage(p)} />}
+              {page === "schools" && <SchoolsView />}
+              {page === "classes" && <ClassesView />}
+              {page === "teachers" && <TeachersView />}
+              {page === "students" && <StudentsView />}
+              {page === "attendance" && <AttendanceView />}
+              {page === "parents" && <ParentsView currentUser={currentUser} />}
+              {page === "users" && <UsersView currentUser={currentUser} />}
+              {page === "notifications" && <NotificationsView />}
+            </>
+          ) : (
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "55vh",
+              textAlign: "center",
+              padding: "40px 20px"
+            }}>
+              <div style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                background: "rgba(239, 68, 68, 0.12)",
+                color: "#ef4444",
+                display: "grid",
+                placeItems: "center",
+                marginBottom: 20
+              }}>
+                <ShieldCheck size={36} />
+              </div>
+              <h2 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "8px", color: "#f8fafc" }}>
+                Administrator Access Required
+              </h2>
+              <p style={{ maxWidth: 480, color: "#94a3b8", fontSize: "14px", lineHeight: 1.6, marginBottom: 24 }}>
+                All system menus, records, and operations (add, edit, delete) are restricted exclusively to administrator accounts.
+              </p>
+              <div style={{
+                padding: "16px 20px",
+                background: "#0f172a",
+                border: "1px solid #1e293b",
+                borderRadius: "12px",
+                fontSize: "13px",
+                color: "#cbd5e1",
+                maxWidth: 420
+              }}>
+                <div><strong>Logged in as:</strong> {currentUser?.full_name || "User"}</div>
+                <div style={{ marginTop: 4 }}><strong>Assigned Role:</strong> <span className="badge-role" style={{ display: "inline-block", marginTop: 2 }}>{currentUser?.role || "STAFF"}</span></div>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>
   );
 }
+

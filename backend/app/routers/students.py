@@ -28,12 +28,12 @@ def create(data: StudentCreate, db: Session = Depends(get_db), user=Depends(role
 
 
 @router.get("/", response_model=list[StudentOut])
-def list_students(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def list_students(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     return db.query(Student).all()
 
 
 @router.get("/{student_id}", response_model=StudentOut)
-def get_student(student_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER", "PARENT"))):
+def get_student(student_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     obj = db.get(Student, student_id)
     if not obj:
         raise HTTPException(404, "Student not found")

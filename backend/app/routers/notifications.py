@@ -33,13 +33,13 @@ def settings(data: NotificationSettingsIn, db: Session = Depends(get_db), user=D
 
 
 @router.get("/logs")
-def notification_logs(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def notification_logs(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Retrieve recent notification history."""
     return db.query(Notification).order_by(Notification.created_at.desc()).limit(100).all()
 
 
 @router.post("/test/{parent_id}")
-def send_test_notification(parent_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def send_test_notification(parent_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Dispatches an immediate test push notification to a parent's Telegram account."""
     parent = db.get(User, parent_id)
     if not parent:
@@ -78,7 +78,7 @@ def send_test_notification(parent_id: int, db: Session = Depends(get_db), user=D
 
 
 @router.delete("/{notification_id}")
-def delete_notification(notification_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def delete_notification(notification_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Delete an individual notification log."""
     notif = db.get(Notification, notification_id)
     if not notif:
@@ -90,7 +90,7 @@ def delete_notification(notification_id: int, db: Session = Depends(get_db), use
 
 @router.post("/bulk-delete")
 @router.delete("/bulk-delete")
-def bulk_delete_notifications(data: BulkDeleteIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def bulk_delete_notifications(data: BulkDeleteIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Delete multiple notification logs in bulk."""
     if not data.ids:
         raise HTTPException(400, "No notification IDs provided for deletion")
@@ -100,7 +100,7 @@ def bulk_delete_notifications(data: BulkDeleteIn, db: Session = Depends(get_db),
 
 
 @router.post("/resend/{notification_id}")
-def resend_notification(notification_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def resend_notification(notification_id: int, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Resend a specific notification log to the parent's Telegram account."""
     notif = db.get(Notification, notification_id)
     if not notif:
@@ -118,7 +118,7 @@ def resend_notification(notification_id: int, db: Session = Depends(get_db), use
 
 
 @router.post("/bulk-resend")
-def bulk_resend_notifications(data: BulkDeleteIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def bulk_resend_notifications(data: BulkDeleteIn, db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Resend multiple notification logs in bulk."""
     if not data.ids:
         raise HTTPException(400, "No notification IDs provided for resending")
@@ -150,7 +150,7 @@ def bulk_resend_notifications(data: BulkDeleteIn, db: Session = Depends(get_db),
 
 
 @router.post("/retry-all-failed")
-def retry_all_failed_notifications(db: Session = Depends(get_db), user=Depends(roles("ADMIN", "TEACHER"))):
+def retry_all_failed_notifications(db: Session = Depends(get_db), user=Depends(roles("ADMIN"))):
     """Automatically find all failed or pending notifications and re-attempt delivery in the background."""
     failed_notifs = db.query(Notification).filter(
         Notification.status.in_(["FAILED", "PENDING"])
