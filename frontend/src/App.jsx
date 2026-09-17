@@ -3895,9 +3895,16 @@ export default function App() {
   const fetchCurrentUser = () => {
     if (localStorage.getItem("schoolguard_token")) {
       api.get("/api/users/me")
-        .then((r) => setCurrentUser(r.data))
+        .then((r) => {
+          setCurrentUser(r.data);
+          if (r.data?.role === "ADMIN") {
+            setPage("dashboard");
+          }
+        })
         .catch(() => {
           localStorage.removeItem("schoolguard_token");
+          setCurrentUser(null);
+          setPage("dashboard");
           setAuthed(false);
         });
     }
@@ -3919,6 +3926,7 @@ export default function App() {
       timerId = setTimeout(() => {
         localStorage.removeItem("schoolguard_token");
         setCurrentUser(null);
+        setPage("dashboard");
         setAuthed(false);
         setSessionNotice("⚠️ Your session has timed out due to 15 minutes of inactivity. Please sign in again.");
       }, IDLE_TIMEOUT_MS);
@@ -3939,6 +3947,7 @@ export default function App() {
       <AuthShell
         onLoginSuccess={() => {
           setSessionNotice("");
+          setPage("dashboard");
           setAuthed(true);
         }}
         sessionNotice={sessionNotice}
@@ -4010,7 +4019,7 @@ export default function App() {
           <button onClick={() => setModalSelfTelegram(true)}>
             <Send size={16} /> Link My Telegram
           </button>
-          <button onClick={() => { localStorage.removeItem("schoolguard_token"); setCurrentUser(null); setSessionNotice(""); setAuthed(false); }}>
+          <button onClick={() => { localStorage.removeItem("schoolguard_token"); setCurrentUser(null); setSessionNotice(""); setPage("dashboard"); setAuthed(false); }}>
             <LogOut size={16} /> Sign Out
           </button>
         </div>
